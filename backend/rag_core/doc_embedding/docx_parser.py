@@ -28,7 +28,8 @@ def split_headings(raw_text):
             continue  # skip empty lines
         if is_divider(line):
             continue  # skip divider lines
-        elif ("* .. _section_" in line) or ("* .. _param" in line):         # section heading patterns in .gms files
+      #  elif ("* .. _section_" in line) or ("* .. _param" in line):         # section heading patterns in .gms files
+        elif ("* .. _" in line):         # section heading patterns in .gms files
             heading_line = line.replace("* .. _", "")
             chunked_text.append(f"heading: {heading_line}")  
         else:
@@ -43,15 +44,20 @@ def split_into_sections(chunked_text):
             sections.append([])  # start a new chunk
         if sections:
             sections[-1].append(line)  # add line to the current chunk
+
+    # if no headings found, return whole text as one section
+    if chunked_text and not sections:
+        sections.append(chunked_text)  
+
     return sections
 
-def split_section_into_chunks(sections, max_len=800):
+def split_section_into_chunks(file_name, sections, max_len=800):
     chunks = []
     for section in sections:
         if not section:
             continue
-
-        heading = section[0]
+        
+        heading = f"heading: {file_name}" if len(sections) == 1 else section[0]
         sentences = "\n".join(section[1:]).split("\n")
 
         current, current_len = [], 0
@@ -79,7 +85,7 @@ def split_section_into_chunks(sections, max_len=800):
     return chunks
 
 
-def docx_parse(input_file_path, max_len):
+def docx_parse_and_chunk(input_file_path, max_len):
     '''
     Reads a .docx file and returns a list of text chunks for RAG.
 
@@ -88,9 +94,10 @@ def docx_parse(input_file_path, max_len):
     split_section_into_chunks: split each section into ~1000 (or max_length) character chunks, but only at newline boundaries
     '''
     
+    file_name = Path(input_file_path).parts[-1]
     raw_text = read_docx_file(input_file_path)
     #print(raw_text)
     chunked_text = split_headings(raw_text)
     sections = split_into_sections(chunked_text)
-    chunks = split_section_into_chunks(sections, max_len)
+    chunks = split_section_into_chunks(file_name, sections, max_len)
     return chunks

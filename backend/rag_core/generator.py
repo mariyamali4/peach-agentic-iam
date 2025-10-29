@@ -24,3 +24,11 @@ def generate_answer(query, context, docTitles, llm_model_name="gemini-2.5-flash"
     llm = genai.GenerativeModel(llm_model_name)
     resp = llm.generate_content(prompt)
     return resp.text
+
+    # stream = llm.generate_content(prompt, stream=True)
+    # print("Gathering the information...\n")
+    # final_text = ""
+    # for chunk in stream:
+    #     if chunk.text:
+    #         print(chunk.text, end="", flush=True)   # real-time console stream
+    #         final_text += chunk.text
