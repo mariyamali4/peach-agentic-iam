@@ -2,6 +2,7 @@
 import streamlit as st
 import os
 from backend.main_agent import process_instruction
+from backend.conv_history import init_db, new_conversation, log_turn
 
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="🍑 Peach - Message_ix Chat", layout="wide")
@@ -9,6 +10,8 @@ st.title("🍑 Peach - Message_ix Chat Agent")
 
 # ---------- MODE SELECTOR ----------
 mode = st.radio("Select Agent Mode:", ["Scenario Editor", "Document Q&A (RAG)"])
+# ---------- INITIALIZE DATABASE ----------
+init_db()
 
 # ---------- EXCEL MODE ----------
 if mode == "Scenario Editor":
@@ -32,6 +35,10 @@ if mode == "Scenario Editor":
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Create conversation ID for new session
+if "conv_id" not in st.session_state:
+    st.session_state.conv_id = new_conversation()
+
 # Display previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
@@ -50,7 +57,8 @@ if user_input:
         with st.spinner("⏳ Processing..."):
             try:
                 if mode == "Scenario Editor":
-                    result = process_instruction(user_input, input_path, mode="excel")
+                    chat_mode = "scenario_editor"
+                    result = process_instruction(user_input, input_path, chat_mode)
 
                     st.markdown("✅ Done! Here's what I did:")
 
@@ -62,17 +70,30 @@ if user_input:
 
                     output_path = result["output_file"]
                     st.download_button(
-                        label="⬇️ Download Updated Excel",
+                        label="⬇️ Download Updated Scenario",
                         data=open(output_path, "rb"),
                         file_name=os.path.basename(output_path),
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     )
-
+                    
                     reply = f"Updated Excel file ready: `{os.path.basename(output_path)}` ✅"
+                    stored_reply = f"Updated Excel file ready: `{os.path.basename(output_path)}` \n Generated code: {result["code"]}"
 
                 else:  # RAG mode
-                    result = process_instruction(user_input, mode="rag")
+                    chat_mode = "rag"
+                    result = process_instruction(user_input, mode=chat_mode)
                     reply = result["answer"]
+
+
+                # Logging chat history
+                log_turn(
+                    conv_id=st.session_state.conv_id,
+                    mode=chat_mode,
+                    timestamp=result.get("timestamp"),
+                    query=user_input,
+                    response = reply if chat_mode == "rag" else stored_reply,
+                    output_file_name=result.get("output_file")
+                )
 
                 st.markdown(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})

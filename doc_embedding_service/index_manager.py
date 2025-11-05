@@ -3,8 +3,8 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from sentence_transformers import SentenceTransformer
 from itertools import chain
-from backend.rag_core.doc_embedding.docx_parser import docx_parse
-from backend.rag_core.doc_embedding.xlsx_parser import excel_parse
+from doc_embedding_service.docx_parser import docx_parse
+from doc_embedding_service.xlsx_parser import excel_parse
 
 
 # --- paths ---
@@ -57,7 +57,7 @@ def add_to_index():
         new_records = [{
             "chunkId": f"{path.stem}_{i:04d}",
             "docTitle": path.name,
-            "insertionDate": datetime.now().isoformat(),
+            "insertionDate": datetime.now(PKT).isoformat(),
             "body": text
         } for i, text in enumerate(chunks)]
 

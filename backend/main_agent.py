@@ -1,11 +1,16 @@
 from backend.scenario_editor import run_excel_agent
 from backend.rag_agent import query_rag
 import os
+from datetime import datetime, timezone, timedelta
+PKT = timezone(timedelta(hours=5))
 
-def process_instruction(instruction, input_file=None, mode="excel"):
-    if mode == "excel":
-        """Wrapper that calls the backend Excel modification pipeline."""
-        output_file = os.path.join("data/outputs", os.path.basename(input_file).replace(".xlsx", "-updated.xlsx"))
+def process_instruction(instruction, input_file=None, mode="scenario_editor"):
+   # timestamp = datetime.now(PKT).isoformat()
+    timestamp = datetime.now(PKT).strftime("%Y%m%d-%H%M%S") # e.g. timestamp = 20251105-163919, for output file naming
+
+    if mode == "scenario_editor":
+        """Wrapper that calls the backend scenario editing pipeline."""
+        output_file = os.path.join("data/outputs", os.path.basename(input_file).replace(".xlsx", f"-updated-{timestamp}.xlsx"))
 
         result = run_excel_agent(
             instruction=instruction,
@@ -14,10 +19,11 @@ def process_instruction(instruction, input_file=None, mode="excel"):
         )
 
         return {
-            "mode": "excel",
+            "mode": "scenario_editor",
             "output_file": output_file,
             "code": result["code"],
             "logs": result["logs"],
+            "timestamp": timestamp
         }
 
     elif mode == "rag":
@@ -25,7 +31,8 @@ def process_instruction(instruction, input_file=None, mode="excel"):
         answer = query_rag(instruction)
         return {
             "mode": "rag",
-            "answer": answer
+            "answer": answer,
+            "timestamp": timestamp
         }
 
     else:
