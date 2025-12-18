@@ -11,6 +11,10 @@ def query_rag(query):
     texts = ["\n".join(text) for text in results["body"]]
     docs = "\n\n".join(texts)
     docTitles = list(set(results['docTitle']))
-    answer = generate_answer(query, docs, docTitles)
-    return answer
+    result = generate_answer(query, docs, docTitles)
+   # return result
+    return {
+        "answer": result["answer"],
+        "output_file": result.get("output_file")  # <-- pass along sheet if produced
+    }
 

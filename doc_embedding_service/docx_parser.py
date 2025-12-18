@@ -3,6 +3,10 @@ from pathlib import Path
 import re
 
 def read_docx_file(path):
+    '''
+    Input: path to a .docx file
+    Output: raw text content of the .docx file
+    '''
     if path.lower().endswith(".docx"):
         src = DocReader(path)
         return "\n".join(p.text for p in src.paragraphs)
@@ -11,6 +15,9 @@ def read_docx_file(path):
 
 
 def is_divider(line):
+    '''
+    Identify if a line is a divider or junk line.
+    '''
     stripped = line.strip()
     # Skip short or empty line
     if not stripped or len(stripped) < 3:
@@ -22,6 +29,11 @@ def is_divider(line):
     return False
 
 def split_headings(raw_text):
+    '''
+     Process raw text to identify headings and split accordingly.
+     Input: raw text string
+     Output: list of lines with "heading:" markers
+     '''
     chunked_text = []
     for line in raw_text.splitlines():
         if not line.strip():
@@ -37,7 +49,14 @@ def split_headings(raw_text):
     return chunked_text
 
 def split_into_sections(chunked_text):
-    # Now split into chunks based on "heading:" lines
+    '''
+    Split the chunked text into sections based on "heading:" lines.
+    Input: 
+        chunked_text (list): list of lines with "heading:" markers
+    Output: 
+        sections (list): list of sections (each section is a list of lines)
+    '''
+
     sections = []
     for line in chunked_text:
         if line.startswith("heading: "):
@@ -52,6 +71,15 @@ def split_into_sections(chunked_text):
     return sections
 
 def split_section_into_chunks(file_name, sections, max_len=800):
+    '''
+    Split each section into smaller chunks based on max length.
+    Inputs: 
+        - file_name (Path): name of the source file
+        - sections (list): list of sections (each section is a list of lines)
+        - max_len (int): maximum length of each chunk
+    Output: 
+        chunks (list): list of chunks (each chunk is a list: [heading, text])
+    '''
     chunks = []
     for section in sections:
         if not section:

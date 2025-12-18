@@ -1,9 +1,21 @@
 from google import generativeai as genai
 import os
+import re
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY1"))
 
 def generate_answer(query, context, docTitles, llm_model_name="gemini-2.5-flash"):
+    '''
+    Generate answer using LLM given the query and context chunks.
+     Inputs:
+        - query (str): User's question or instruction
+        - context (str): Retrieved document chunks as context
+        - docTitles (str): Titles of the source documents
+        - llm_model_name (str): Name of the LLM model to use
+     Outputs:
+        - answer (str): Generated answer from the LLM
+        - output_file (str or None): Name of output file if mentioned in answer
+    '''
   
     prompt = f"""
         You are a helpful assistant specialized in climate scenario modeling.
@@ -23,7 +35,16 @@ def generate_answer(query, context, docTitles, llm_model_name="gemini-2.5-flash"
     """
     llm = genai.GenerativeModel(llm_model_name)
     resp = llm.generate_content(prompt)
-    return resp.text
+   # return resp.text
+
+    text = resp.text
+    match = re.search(r"saved to ([\w\-.]+\.xlsx)", text, re.IGNORECASE)
+    output_file = match.group(1) if match else None
+
+    return {
+        "answer": text,
+        "output_file": output_file
+    }
 
     # stream = llm.generate_content(prompt, stream=True)
     # print("Gathering the information...\n")
