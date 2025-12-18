@@ -1,4 +1,4 @@
-# 🍑 Peach — Climate Scenario Chat Agent
+# 🍑 Peach — An LLM-Based Multi-Agent Framework for Interactive Integrated Assessment Modeling
 
 **Peach** is a chat agents that lets users:
 1. **Edit MESSAGEix-style scenario Excel files** using natural-language instructions.
@@ -22,30 +22,36 @@ Built with **Streamlit**, **FAISS**, and **Google Gemini**, this demo shows how 
 ```
 project/
 │
-├── app_chat.py
+├── app.py
 │
 ├── backend/
-│   ├── rag_agent.py
-│   ├── scenario_editor.py
-│   ├── main_agent.py
-│   │
-│   ├── rag_backend/
-│   │   ├── doc_embedding/
-│   │   │   ├── docx_parser.py
-│   │   │   ├── xlsx_parser.py
-│   │   │   └── index_manager.py
-│   │   │
-│   │   ├── retriever.py
-│   │   ├── generator.py
-│   │   │
-│   │   └── rag_store/
-│   │       ├── faiss_hnsw_index.faiss
-│   │       └── rag_metadata.parquet
+│   ├── config/
+|   |    └── rag_config.py
+│   ├── rag_core/
+│   |   ├── retriever.py
+│   |   └── generator.py
+|   |
+|   ├── conv_history.py
+|   ├── intent_detection.py
+|   ├── orchestrator_agent.py
+│   ├── rag_engine.py
+│   └── scenario_editor.py
 │
 ├── data/
 │   ├── docs/
-│   ├── outputs/
-│   └── uploads/
+|   └── history/
+|      ├── conv_history.db
+│      ├── outputs/
+│      └── uploads/
+|
+├── doc_embedding/
+│      ├── docx_parser.py
+│      ├── xlsx_parser.py
+│      └── index_manager.py
+|
+├── rag_store/
+│      ├── faiss_hnsw_index.faiss
+│      └── metadata_store.parquet
 │
 ├── requirements.txt
 └── README.md
@@ -78,11 +84,11 @@ project/
    You can either:
    - Add it to your environment variables:
      ```bash
-     setx GEMINI_API_KEY "your_api_key_here"
+     setx GEMINI_API_KEY1 "your_api_key_here"
      ```
    - Or create a `.env` file in the root:
      ```
-     GEMINI_API_KEY=your_api_key_here
+     GEMINI_API_KEY1=your_api_key_here
      ```
 
 ---
@@ -90,7 +96,7 @@ project/
 ## ▶️ Running the App
 
 ```bash
-streamlit run app_chat.py
+streamlit run app.py
 ```
 
 Then open the local URL displayed in the terminal:
@@ -103,10 +109,10 @@ http://localhost:8501
 ## 🧠 Example Use
 
 **Scenario Editor**
-> “Reduce `inv_cost` by 10% for all solar technologies after 2030.”
+> “Reduce investment cost by 10% for all solar technologies after 2030.”
 
 **RAG**
-> “What is the boundary condition for `bound_activity`?”
+> “What is the boundary condition for bound_activity?”
 
 ---
 
@@ -134,7 +140,9 @@ Only `numpy` and `pandas` imports are whitelisted.
 ## 💡 Future Work
 
 - Add authentication
-- Integration with MESSAGEix solver backend
+- Coder Agent: Integration with MESSAGEix solver backend
+- Analysis Agent: Interpretation of model output
+- Automated evaluation pipeline
 - Editable visualization for scenario deltas
 
 ---
