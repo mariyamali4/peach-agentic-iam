@@ -13,14 +13,15 @@ PKT = timezone(timedelta(hours=5))
 init_db()
 base_scenario_path = r"D:\lums-python-programming\thesis\wit-messageix-docs\CurPol-v2.xlsx"
 
-def orchestrate(instruction, uploaded=False, input_file=None):
+#def orchestrate(instruction, uploaded=False, input_file=None):
+def orchestrate(instruction, input_file=None):
     """
     Central orchestration layer:
     - intent detection
     - agent routing
     - DB logging
     """
-
+    uploaded = input_file is not None
     timestamp = datetime.now(PKT).strftime("%Y%m%d-%H%M%S")
 
     # ---- conversation lifecycle ----
@@ -42,7 +43,6 @@ def orchestrate(instruction, uploaded=False, input_file=None):
 
         result = run_excel_agent(
             instruction=instruction,
-            uploaded=uploaded,
             input_file=input_file,
             output_file=output_file
         )

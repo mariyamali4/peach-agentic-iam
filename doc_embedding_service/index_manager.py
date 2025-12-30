@@ -3,9 +3,11 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from sentence_transformers import SentenceTransformer
 from itertools import chain
-from doc_embedding_service.docx_parser import docx_parse
-from doc_embedding_service.xlsx_parser import excel_parse
+# from doc_embedding_service.docx_parser import docx_parse_and_chunk
+# from doc_embedding_service.xlsx_parser import excel_parse
 
+from docx_parser import docx_parse_and_chunk
+from xlsx_parser import excel_parse
 
 # --- paths ---
 BASE_DIR = Path(r"D:\lums-python-programming\thesis\project")
@@ -50,7 +52,7 @@ def add_to_index():
             continue  # already indexed
 
         if path.suffix.lower() ==".docx":
-            chunks = docx_parse(str(path), max_len=MAX_LEN_DOCX)
+            chunks = docx_parse_and_chunk(str(path), max_len=MAX_LEN_DOCX)
         else:
             chunks = excel_parse(str(path), max_len=MAX_LEN_XLSX)
 
@@ -93,3 +95,5 @@ def add_to_index():
     updated_metadata.to_parquet(META_PATH)
     faiss.write_index(index, str(INDEX_PATH))
     print(f"✅ Index updated — total records: {len(updated_metadata)}")
+
+add_to_index()

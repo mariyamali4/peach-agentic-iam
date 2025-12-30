@@ -10,13 +10,13 @@ llm_model = genai.GenerativeModel("gemini-2.5-flash")
 
 embedding_model, index, metadata = load_rag_resources()
 
-def run_excel_agent(instruction, uploaded, input_file, output_file, max_retries=3):
+def run_excel_agent(instruction, input_file, output_file, max_retries=3):
     """
     Reads Excel, gets transformation code from model, executes it safely, saves new file.
     Returns structured output for front-end.
     Inputs:
     - instruction (str): User's instruction for Excel manipulation
-    - uploaded (bool): Whether file was uploaded in input
+  #  - uploaded (bool): Whether file was uploaded in input
     - input_file (str): Path to input Excel file
     - output_file (str): Path to save updated Excel file
     - max_retries (int): Number of retries for code execution on failure
@@ -28,9 +28,12 @@ def run_excel_agent(instruction, uploaded, input_file, output_file, max_retries=
     logs = []
 
     df_input, target_sheet_name = None, None
-    if uploaded == False:
-        retriever_query = f"which sheet has information about this query: {instruction}"
+    if input_file is not None:
+        df_input = pd.read_excel(input_file)
+    else:
+        retriever_query = f"which CurPol-v2 sheet has information about this query: {instruction}"
         results = retrieve_chunks(retriever_query, embedding_model, index, metadata, k=1, for_rag=True)
+     #   print(results['body'][0])
         target_sheet_name = results['body'][0].split('\n')[0]
         target_sheet_name = target_sheet_name.replace('Sheet: ', '')
         logs.append(f"🔍 Identified target sheet: '{target_sheet_name}'")
@@ -41,9 +44,6 @@ def run_excel_agent(instruction, uploaded, input_file, output_file, max_retries=
                 df_input = xls.parse(sheet_name)
                 break
 
-    else:
-        df_input = pd.read_excel(input_file)
-
     if df_input is None:
         raise ValueError(f"❌ No sheet named '{target_sheet_name}' found in {input_file}.")
 
@@ -52,21 +52,42 @@ def run_excel_agent(instruction, uploaded, input_file, output_file, max_retries=
 
     # Prepare prompt
     prompt = f"""
-        You are a data engineer for climate scenarios.
-        Given this schema:
-        Columns: {list(df_input.columns)}
+        You are a data engineer working with climate scenario data.
+        You are given a pandas DataFrame named `df`.
 
-        Example Rows:
-        {df_input.head().values.tolist()}
+        Schema:
+        {list(df_input.columns)}
 
-        Instruction: {instruction}
+        Example rows:
+        {df_input.head().to_dict(orient="records")}
 
-        Write Python (pandas) code to apply this transformation.
-        The DataFrame is named `df`.
-        Return only the code, without any explanation or markdown formatting.
-        Make sure to save the updated columns back to `df`.
-        Ensure the code is safe and does not use any file operations or unsafe libraries.
+        Instruction:
+        {instruction}
+
+        TASK:
+        Write Python (pandas) code that applies the instruction by modifying `df` in-place.
+
+        RULES:
+        - The DataFrame is named `df`
+        - Modify `df` directly (do not create a new DataFrame)
+        - Use `.loc[...]` for assignments
+        - Filter rows using `.str.contains(...)`, not exact matches
+        - Preserve all rows and columns unless the instruction explicitly says otherwise
+        - If time series behavior is implied, sort by the appropriate year column
+        - Use only pandas and numpy
+
+        FORBIDDEN:
+        - File operations (read/write)
+        - Defining functions or classes
+        - Using os, sys, pathlib, subprocess, eval, exec
+
+        OUTPUT:
+        - Return ONLY valid Python code
+        - No explanations
+        - No markdown
     """
+
+
 
     def generate_code(extra_context=None):
         context = prompt

@@ -49,8 +49,7 @@ if user_input:
             try:
                 result = orchestrate(
                     instruction=user_input,
-                    uploaded=uploaded,
-                    input_file=input_file_path
+                    input_file=input_path if uploaded_file else None
                 )
 
                 # ---------- DISPLAY ----------
