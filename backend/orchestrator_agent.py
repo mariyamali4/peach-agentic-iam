@@ -3,7 +3,8 @@ import os
 from datetime import datetime, timezone, timedelta
 
 from backend.intent_detection import get_intent
-from backend.scenario_editor import run_excel_agent
+from backend.scenario_editor import run_scenario_agent
+
 from backend.rag_engine import query_rag
 from backend.conv_history import init_db, new_conversation, log_turn
 
@@ -41,7 +42,8 @@ def orchestrate(instruction, input_file=None):
             os.path.basename(input_file).replace(".xlsx", f"-updated-{timestamp}.xlsx")
         )
 
-        result = run_excel_agent(
+        #result = run_excel_agent(
+        result = run_scenario_agent(
             instruction=instruction,
             input_file=input_file,
             output_file=output_file

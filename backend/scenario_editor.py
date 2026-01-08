@@ -1,16 +1,17 @@
 import pandas as pd
 import re
 import os
-import google.generativeai as genai
 from backend.config.rag_config import load_rag_resources
 from backend.rag_core.retriever import retrieve_chunks
+from groq import Groq
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY1"])
-llm_model = genai.GenerativeModel("gemini-2.5-flash")
+
+groq_api_key = os.environ.get("GROQ_API_KEY1")
+client = Groq(api_key = groq_api_key)
 
 embedding_model, index, metadata = load_rag_resources()
 
-def run_excel_agent(instruction, input_file, output_file, max_retries=3):
+def run_scenario_agent(instruction, input_file, output_file, max_retries=3):
     """
     Reads Excel, gets transformation code from model, executes it safely, saves new file.
     Returns structured output for front-end.
@@ -72,9 +73,11 @@ def run_excel_agent(instruction, input_file, output_file, max_retries=3):
         - Modify `df` directly (do not create a new DataFrame)
         - Use `.loc[...]` for assignments
         - Filter rows using `.str.contains(...)`, not exact matches
+        - Make sure to cater for both upper and lower case keywords
         - Preserve all rows and columns unless the instruction explicitly says otherwise
         - If time series behavior is implied, sort by the appropriate year column
         - Use only pandas and numpy
+        - Try using vectorized operations wherever possible.
 
         FORBIDDEN:
         - File operations (read/write)
@@ -93,8 +96,18 @@ def run_excel_agent(instruction, input_file, output_file, max_retries=3):
         context = prompt
         if extra_context:
             context += f"\nFix the issue described here: {extra_context}"
-        response = llm_model.generate_content(context)
-        return re.sub(r"^```(?:python)?|```$", "", response.text.strip(), flags=re.MULTILINE).strip()
+
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+        response = completion.choices[0].message.content
+        return re.sub(r"^```(?:python)?|```$", "", response.strip(), flags=re.MULTILINE).strip()
 
     # First attempt
     code = generate_code()

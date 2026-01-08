@@ -8,7 +8,7 @@ model, index, metadata = load_rag_resources()
 def query_rag(query):
     """Run the RAG pipeline: retrieve → generate → return answer"""
     results = retrieve_chunks(query, model, index, metadata, k=10, for_rag=True)
-    texts = ["\n".join(text) for text in results["body"]]
+    texts = [text for text in results["body"]]
     docs = "\n\n".join(texts)
     docTitles = list(set(results['docTitle']))
     result = generate_answer(query, docs, docTitles)

@@ -5,10 +5,11 @@ based on intent classification — using a rule-based method
 with an optional LLM fallback.
 """
 import os
+import json
 import google.generativeai as genai
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY1"])
-model = genai.GenerativeModel("gemini-2.5-flash")
+llm = genai.GenerativeModel("gemini-2.5-flash")
 
 """
 Initialize the router.
@@ -60,11 +61,21 @@ def rule_based_route(user_input):
     }
 
 
+def extract_json(text: str):
+    text = text.strip()
+
+    if text.startswith("```"):
+        text = text.strip("`")
+        text = text.replace("json", "", 1).strip()
+
+    return json.loads(text)
+
+
 def llm_route(user_input: str):
     """
     LLM-based classification (fallback or enhanced reasoning).
     """
-    few_shot_prompt = r"""
+    few_shot_prompt = f"""
         You are an Agent Router in a multi-agent system:
         1. scenario_editor — edits Excel data according to user instructions.
         2. rag-agent — retrieves or explains information from a knowledge base.
@@ -72,27 +83,28 @@ def llm_route(user_input: str):
         
         Examples:
         User: formulas and variables related to fix_cost, inv_cost, var_cost
-        Output: {"selected_agent": "rag", "reason": "User is asking for information, not editing data."}
+        Output: {{"selected_agent": "rag", "reason": "User is asking for information, not editing data."}}
 
         User: make the inv_cost half
-        Output: {"selected_agent": "scenario_editor", "reason": "User is modifying Excel data values."}
+        Output: {{"selected_agent": "scenario_editor", "reason": "User is modifying Excel data values."}}
 
         User: "rename the column 'investment_cost' to 'inv_cost' and save the file"
-        Output: {"selected_agent": "scenario_editor", "reason": " Explicit data transformation, so use the scenario-editor agent."}
+        Output: {{"selected_agent": "scenario_editor", "reason": " Explicit data transformation, so use the scenario-editor agent."}}
 
         User: "read the inv_cost sheet, format the data into a pd dataframe, and double the solar value. give the output in form of an excel file, with the relevant changes saved"
-        Output: {"selected_agent": "scenario_editor", "reason": "This requires reading, editing, and writing Excel data, so use the scenario-editor agent."}
+        Output: {{"selected_agent": "scenario_editor", "reason": "This requires reading, editing, and writing Excel data, so use the scenario-editor agent."}}
 
         Decide which agent should handle the given input: {user_input}. 
         Output format strictly as JSON:
-        {"selected_agent": "rag" or "scenario_editor", 
-         "reason": "<short explanation>"}
+        {{"selected_agent": "rag" or "scenario_editor", 
+         "reason": "<short explanation>"}}
     """
 
     try:
-        llm = genai.GenerativeModel(model)
         resp = llm.generate_content(few_shot_prompt)
-        return resp
+        text = resp.text.strip()
+        parsed = extract_json(text)
+        return parsed
     except Exception as e:
         print(f"[Router Warning] LLM routing failed: {e}")
         return None
@@ -114,5 +126,5 @@ def get_intent(user_input: str):
     return rule_result
 
 
-# r = get_intent("past 10 years convex investment costs trends")
+# r = get_intent("i need to remove the most expensive non-renewable technology after 2030")
 # print(r['selected_agent'])
