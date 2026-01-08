@@ -59,30 +59,36 @@ def run_scenario_agent(instruction, input_file, output_file, max_retries=3):
         Schema:
         {list(df_input.columns)}
 
-        Example rows:
+        Sample rows:
         {df_input.head().to_dict(orient="records")}
 
         Instruction:
         {instruction}
 
         TASK:
-        Write Python (pandas) code that applies the instruction by modifying `df` in-place.
+        Write Python (pandas and numpy) code that applies the instruction by modifying `df` in-place.
 
-        RULES:
-        - The DataFrame is named `df`
-        - Modify `df` directly (do not create a new DataFrame)
-        - Use `.loc[...]` for assignments
-        - Filter rows using `.str.contains(...)`, not exact matches
-        - Make sure to cater for both upper and lower case keywords
-        - Preserve all rows and columns unless the instruction explicitly says otherwise
-        - If time series behavior is implied, sort by the appropriate year column
-        - Use only pandas and numpy
-        - Try using vectorized operations wherever possible.
+        LOGIC RULES (strict):
+        1. Apply any temporal filters (e.g. "after 2030") BEFORE analysis.
+        2. For "most/least expensive", compute the highest/lowest MEAN value unless stated otherwise.
+        3. Identify technologies or categories by name/ID — NEVER by float value matching.
+        4. Scope → aggregate → modify (in that order).
+        5. Use vectorized operations only (no loops, no `.apply`).
 
+        
+        CODING RULES:
+        - Modify `df` in-place using `.loc[...]`.
+        - Use `.str.contains(..., case=False, na=False)`, , not exact matches, for string filters.
+        - Preserve all rows/columns unless explicitly instructed to drop them.
+        - Sort by time columns (e.g. `year`, `year_vtg`) if trends are implied.
+        - Drop rows only via boolean indexing or `df.drop(...)`.    
+
+        
         FORBIDDEN:
-        - File operations (read/write)
-        - Defining functions or classes
-        - Using os, sys, pathlib, subprocess, eval, exec
+        - File I/O, system calls, env access.
+        - Defining functions/classes.
+        - Using os, sys, pathlib, subprocess, eval, exec.
+        - Any code that triggers `SettingWithCopyWarning`.
 
         OUTPUT:
         - Return ONLY valid Python code
