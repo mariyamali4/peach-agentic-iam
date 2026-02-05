@@ -1,10 +1,10 @@
-# 🍑 Peach — An LLM-Based Multi-Agent Framework for Interactive Integrated Assessment Modeling
+# 🍑 Peach-AgenticIAM — An LLM-Based Multi-Agent Framework for Interactive Integrated Assessment Modeling
 
-**Peach** is a chat agents that lets users:
+**Peach** lets users:
 1. **Edit MESSAGEix-style scenario Excel files** using natural-language instructions.
 2. **Query supporting documentation** (e.g. messaeg_ix documentation files, current policy documents) using a robust RAG system.
 
-Built with **Streamlit**, **FAISS**, and **Google Gemini**, this demo shows how LLMs can assist climate modelers interactively.
+Built with **Streamlit**, **FAISS**, **gemini-2.5-flash** and **llama-3.3-70b**, this demo shows how LLMs can assist climate modelers interactively.
 
 ---
 
