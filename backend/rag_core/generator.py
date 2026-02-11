@@ -1,10 +1,11 @@
-from google import generativeai as genai
 import os
-import re
+from groq import Groq
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY1"))
 
-def generate_answer(query, context, docTitles, llm_model_name="gemini-2.5-flash"):
+groq_api_key = os.environ.get("GROQ_API_KEY1")
+client = Groq(api_key = groq_api_key)
+
+def generate_answer(query, context, docTitles, llm_model_name="openai/gpt-oss-120b"):
     '''
     Generate answer using LLM given the query and context chunks.
      Inputs:
@@ -30,26 +31,25 @@ def generate_answer(query, context, docTitles, llm_model_name="gemini-2.5-flash"
         Source:
         {docTitles}
 
-        If the text contains math notation, format your response in a readable way for user. 
+        Always format math notation in your response in a readable way for user. 
         Mention the source document titles at the end of the answer.
     """
-    llm = genai.GenerativeModel(llm_model_name)
-    resp = llm.generate_content(prompt)
-   # return resp.text
 
-    text = resp.text
-    match = re.search(r"saved to ([\w\-.]+\.xlsx)", text, re.IGNORECASE)
-    output_file = match.group(1) if match else None
+    completion = client.chat.completions.create(
+            model=llm_model_name, 
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+    response = completion.choices[0].message.content
 
-    return {
-        "answer": text,
-        "output_file": output_file
-    }
+    return response
 
-    # stream = llm.generate_content(prompt, stream=True)
-    # print("Gathering the information...\n")
-    # final_text = ""
-    # for chunk in stream:
-    #     if chunk.text:
-    #         print(chunk.text, end="", flush=True)   # real-time console stream
-    #         final_text += chunk.text
+
+    # Iterate over the response chunks and print/process them as they arrive, when stream = True in completion creation
+    # for chunk in chat_completion:
+    #     print(chunk.choices[0].delta.content or "", end="")
+    # print("\n") # Add a final newline for clean output

@@ -12,10 +12,11 @@ PKT = timezone(timedelta(hours=5))
 
 # Ensure DB is ready once
 init_db()
-base_scenario_path = r"D:\lums-python-programming\thesis\wit-messageix-docs\CurPol-v2.xlsx"
+base_scenario_path = r"D:\lums-python-programming\thesis\wit-messageix-docs\MESSAGEix-Pakistan-CurPol.xlsx"
 
-#def orchestrate(instruction, uploaded=False, input_file=None):
 def orchestrate(instruction, input_file=None):
+    print("ORCHESTRATE CALLED WITH:", repr(instruction))
+
     """
     Central orchestration layer:
     - intent detection
@@ -38,14 +39,14 @@ def orchestrate(instruction, input_file=None):
             input_file = base_scenario_path
 
         output_file = os.path.join(
-            "data/history/outputs",
-            os.path.basename(input_file).replace(".xlsx", f"-updated-{timestamp}.xlsx")
-        )
+                "data/history/outputs",
+                os.path.basename(input_file).replace(".xlsx", f"-updated-{timestamp}.xlsx")
+            )
 
-        #result = run_excel_agent(
         result = run_scenario_agent(
             instruction=instruction,
             input_file=input_file,
+            uploaded=uploaded,
             output_file=output_file
         )
 
@@ -78,9 +79,7 @@ def orchestrate(instruction, input_file=None):
 
     # ---------- RAG ----------
     elif mode == "rag":
-        result = query_rag(instruction)
-
-        reply = result["answer"]
+        reply = query_rag(instruction)
 
         log_turn(
             conv_id=conv_id,
@@ -89,13 +88,12 @@ def orchestrate(instruction, input_file=None):
             timestamp=timestamp,
             query=instruction,
             response=reply,
-            output_file_name=result.get("output_file")
+            output_file_name=None
         )
 
         return {
             "mode": mode,
             "reply": reply,
-            "output_file": result.get("output_file"),
             "timestamp": timestamp
         }
 

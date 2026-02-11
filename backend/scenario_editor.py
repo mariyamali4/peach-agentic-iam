@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import re
 import os
 from backend.config.rag_config import load_rag_resources
@@ -11,7 +12,26 @@ client = Groq(api_key = groq_api_key)
 
 embedding_model, index, metadata = load_rag_resources()
 
-def run_scenario_agent(instruction, input_file, output_file, max_retries=3):
+def read_uploaded_file_data(file_path, query):
+    xls = pd.ExcelFile(file_path)
+    sheet_names = xls.sheet_names
+    if len(sheet_names) > 1:
+        q_emb = embedding_model.encode([query], convert_to_numpy=True, normalize_embeddings=True)
+        sheet_embs = [embedding_model.encode([sheet_name], convert_to_numpy=True, normalize_embeddings=True) for sheet_name in sheet_names]
+
+        scores = [np.dot(q_emb, sheet_emb.T).item() for sheet_emb in sheet_embs]
+        best_idx = np.argmax(scores)
+        best_sheet = sheet_names[best_idx]        
+    else:
+        best_sheet = sheet_names[0]
+        
+    print(f"Best matching sheet: {best_sheet}")
+    for sheet in sheet_names:
+        if sheet == best_sheet:
+            df = xls.parse(sheet)
+            return df, best_sheet
+
+def run_scenario_agent(instruction, input_file, uploaded, output_file, max_retries=3):
     """
     Reads Excel, gets transformation code from model, executes it safely, saves new file.
     Returns structured output for front-end.
@@ -29,10 +49,13 @@ def run_scenario_agent(instruction, input_file, output_file, max_retries=3):
     logs = []
 
     df_input, target_sheet_name = None, None
-    if input_file is not None:
-        df_input = pd.read_excel(input_file)
+  #  if input_file is not None:
+    if uploaded:
+        logs.append(f"Using uploaded file: {input_file}")
+        df_input, target_sheet_name = read_uploaded_file_data(input_file, instruction)
+        logs.append(f"🔍 Identified target sheet: '{target_sheet_name}'")
     else:
-        retriever_query = f"which CurPol-v2 sheet has information about this query: {instruction}"
+        retriever_query = f"which MESSAGEix-Pakistan-CurPol sheet has information about this query: {instruction}"
         results = retrieve_chunks(retriever_query, embedding_model, index, metadata, k=1, for_rag=True)
      #   print(results['body'][0])
         target_sheet_name = results['body'][0].split('\n')[0]
@@ -44,6 +67,8 @@ def run_scenario_agent(instruction, input_file, output_file, max_retries=3):
             if sheet_name == target_sheet_name:
                 df_input = xls.parse(sheet_name)
                 break
+        #logs.append(f"🔍 Identified target sheet: '{target_sheet_name}'")
+
 
     if df_input is None:
         raise ValueError(f"❌ No sheet named '{target_sheet_name}' found in {input_file}.")

@@ -114,7 +114,8 @@ def llm_route(user_input: str):
     
     try:
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+          #  model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {
                     "role": "user",
@@ -131,23 +132,25 @@ def llm_route(user_input: str):
 
 
 def get_intent(user_input: str):
+    print("Checking intent...")
     """
     Route a user input to the appropriate sub-agent.
     Automatically uses LLM fallback if enabled and available.
     """
     rule_result = rule_based_route(user_input)
+    print(f"Rule-based result: {rule_result}")
 
     # If LLM mode is active, only invoke for uncertain or generic retrieval cases
     if use_llm and rule_result["selected_agent"] == "rag":
         print('Routing to LLM')
         llm_result = llm_route(user_input)
+        print(llm_result)
         if llm_result:
             return llm_result
 
     return rule_result
 
 ## Local testing
-#r = get_intent("i need to remove the most expensive non-renewable technology after 2030")
 #r = get_intent("should i remove the most expensive non-renewable technology after 2030")
-r = get_intent("how can i edit fixed cost?")
-print(r['selected_agent'])
+# r = get_intent("how can i edit fixed cost?")
+# print(r['selected_agent'])

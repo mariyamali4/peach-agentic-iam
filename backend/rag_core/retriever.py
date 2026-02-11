@@ -1,6 +1,5 @@
 import faiss
 from pathlib import Path
-from sentence_transformers import SentenceTransformer
 
 # --- configuration ---
 BASE_DIR = Path(r"D:\lums-python-programming\thesis\project")
