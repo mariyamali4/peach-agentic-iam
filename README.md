@@ -13,7 +13,7 @@ Built with **Streamlit**, **FAISS**, **GROQ Cloud LLM APIs**, this demo shows ho
 | Mode | Description |
 |------|--------------|
 | **Scenario Editor** | Upload an Excel input file (e.g. technology cost data). Give an instruction, and the agent writes and executes Pandas code to modify the file safely, producing an updated version for download. |
-| **Document Q&A (RAG)** | Ask questions about your documentation (e.g. “what are the technologies in inv_cost sheet?”). Uses a simple docx/xlsx → chunks → embeddings → FAISS index → retriever → Gemini generator setup. |
+| **Document Q&A (RAG)** | Ask questions about your documentation (e.g. “what are the technologies in inv_cost sheet?”). Uses a simple docx/xlsx → chunks → embeddings → FAISS index → retriever → Groq LLM API for generator setup. |
 | **MESSAGEix Executor Agent** | Upload a scenario file. Give instructions to run the model, and the agent solves the model and returns the objective value and solved model file for download. |
 
 ---
